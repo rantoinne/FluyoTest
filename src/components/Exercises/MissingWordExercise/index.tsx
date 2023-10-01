@@ -50,18 +50,20 @@ export const MissingWordExercise = ({
 
   const statementWords = nativeStatement.split(' ');
 
-  useEffect(() => {
-    const learningStatementString = mergeAndReplaceAll(learningStatement, '_________', '_', ' ');
-    if (statement !== learningStatementString) {
-      setLearningStatement(replaceAllAndSplit(statement, '_', '_________', ' '));
-    }
-  }, [statement]);
-  
   const resetStates = (): void =>  {
     setSelectedOptions([]);
     setLearningStatement(['']);
     setResultBannerButtonType(EXERCISE_BUTTON_TYPE.SUBMIT);
   };
+  
+  useEffect(() => {
+    const learningStatementString = mergeAndReplaceAll(learningStatement, '_________', '_', ' ');
+
+    if (statement !== learningStatementString) {
+      setSelectedOptions([]);
+      setLearningStatement(replaceAllAndSplit(statement, '_', '_________', ' '));
+    }
+  }, [statement]);
 
   const handleOptionPress = (option: string): void => {
     const updatedOptions = [...selectedOptions, option];

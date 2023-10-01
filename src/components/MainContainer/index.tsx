@@ -16,6 +16,7 @@ interface Props extends ViewProps {
  */
 export const MainContainer: FC<PropsWithChildren<Props>> = ({
   children = null,
+  containerStyle = {},
   columnAlignment = COLUMN_ALIGNMENT.CENTER,
   ...restViewProps
 }): React.ReactElement => {
@@ -31,7 +32,7 @@ export const MainContainer: FC<PropsWithChildren<Props>> = ({
   }
 
   return (
-    <View style={[styles.containerStyle]} {...restViewProps}>
+    <View style={[styles.containerStyle, containerStyle]} {...restViewProps}>
       {children}
     </View>
   );
