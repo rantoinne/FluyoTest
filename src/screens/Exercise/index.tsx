@@ -1,46 +1,32 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Text, View } from 'react-native';
 import { MainContainer, MissingWordExercise } from '@components';
-import { COLLECTION_NAME, COLUMN_ALIGNMENT, EXERCISE_TYPE, ExerciseDataType, PADDINGS, THEME } from '@utils';
-import firestore from '@react-native-firebase/firestore';
+import {
+  THEME,
+  PADDINGS,
+  EXERCISE_TYPE,
+  fetchExercises,
+  COLUMN_ALIGNMENT,
+  ExerciseDataType,
+} from '@utils';
 
-interface Props {
-  navigation: any;
-}
-
-export const Exercise = ({
-  navigation,
-}: Props): JSX.Element => {
+export const Exercise = (): JSX.Element => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [exercises, setExercises] = useState<ExerciseDataType[]>();
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(-1);
 
-  const fetchExercise = useCallback(async () => {
-    try {
-      const snapshot = await firestore().collection(COLLECTION_NAME).get();
-
-      if (!snapshot.empty) {
-        const exerciseData = snapshot.docs.map(doc => doc.data() as ExerciseDataType);
-        setExercises(exerciseData);
-        setCurrentExerciseIndex(0);
-      } else {
-        setExercises([]);
-        setCurrentExerciseIndex(-1);
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching records:', error);
-      Alert.alert('Error', 'Unable to fetch records from firestore!');
-    }
+  const loadExercises = useCallback(async () => {
+    const fetchedExercises = await fetchExercises();
+    setExercises(fetchedExercises);
+    setCurrentExerciseIndex(fetchedExercises.length > 0 ? 0 : -1);
+    setIsLoading(false);
   }, []);
   
   useEffect(() => {
-    fetchExercise();
+    loadExercises();
   }, []);
 
-  const currentExercise = () => {
-    return isLoading ? null : exercises[currentExerciseIndex];
-  };
+  const currentExercise = isLoading ? null : exercises[currentExerciseIndex];
 
   const nextExercise = () => {
     const targetExercise = exercises[currentExerciseIndex + 1];
@@ -52,18 +38,19 @@ export const Exercise = ({
   };
 
   const renderExercise = (): React.ReactElement => {
-    if (!isLoading && currentExercise() !== undefined && currentExercise().exerciseType) {
-      switch (currentExercise().exerciseType) {
+    const showExercise = !isLoading && currentExercise !== undefined && currentExercise.exerciseType;
+    if (showExercise) {
+      switch (currentExercise.exerciseType) {
         case EXERCISE_TYPE.MISSING_WORD:
           return (
             <MissingWordExercise
-              exerciseData={currentExercise()}
+              exerciseData={currentExercise}
               onPressSuccessCallback={nextExercise}
               onPressErrorCallback={nextExercise}
             />
           );
         default: return (
-          <Text>Exercises of type {currentExercise().exerciseType} are currently not supported!</Text>
+          <Text>Exercises of type {currentExercise.exerciseType} are currently not supported!</Text>
         );
       }
     }

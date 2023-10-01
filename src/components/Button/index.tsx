@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import React from 'react';
 import styles from './styles';
+import { THEME } from '@utils';
 
 interface Props extends TouchableOpacityProps {
   title: string;
@@ -28,14 +29,12 @@ export const Button = ({
     <TouchableOpacity
       style={[
         styles.buttonStyle,
-        { backgroundColor: touchableProps.disabled ? '#6391A6' : '#14E3E9' },
+        { backgroundColor: touchableProps.disabled ? THEME.DISABLED : THEME.SUCCESS },
         buttonStyle,
       ]}
-      { ...touchableProps }
+      {...touchableProps}
     >
-      <Text
-        style={[styles.titleStyle, titleStyle]}
-      >
+      <Text style={[styles.titleStyle, titleStyle]}>
         {title.toUpperCase()}
       </Text>
     </TouchableOpacity>

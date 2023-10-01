@@ -69,3 +69,9 @@ export enum EXERCISE_TYPE {
   MISSING_WORD = 'MISSING_WORD',
   OTHER = 'OTHER',
 }
+
+export enum EXERCISE_BUTTON_TYPE {
+  SUBMIT = 'SUBMIT',
+  SUCCESS = 'SUCCESS',
+  ERROR = 'ERROR'
+}

@@ -1,5 +1,6 @@
 // import { useColorScheme } from 'react-native';
 import { COLOR_CODES_FOR_DARK_THEME, COLOR_CODES_FOR_LIGHT_THEME } from './enums';
+import { COLOR_CODE_TYPE } from './types';
 
 /**
  * @returns {COLOR_CODES_FOR_DARK_THEME | COLOR_CODES_FOR_LIGHT_THEME} based on theme
@@ -16,7 +17,7 @@ export const getCurrentTheme
  * based on theme
  * @returns [COLOR, COLOR]
  */
-export const getGradientColors = () => {
+export const getGradientColors = (): COLOR_CODE_TYPE[] => {
   const currentThemePalette = getCurrentTheme();
   
   return [currentThemePalette.SHADOW, currentThemePalette.OUTLINE];

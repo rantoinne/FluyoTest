@@ -1,7 +1,15 @@
-import { Text, View, Platform } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { EXERCISE_TYPE_HEADER_TITLE_MAP, ExerciseDataType, PADDINGS, THEME, checkIfArraysAreSame } from '@utils';
-import { Button, Pill } from '@components'
+import { Text, View, Platform, ScrollView } from 'react-native';
+import React, { ReactNode, useEffect, useState } from 'react';
+import {
+  THEME,
+  ExerciseDataType,
+  checkIfArraysAreSame,
+  EXERCISE_BUTTON_TYPE,
+  EXERCISE_TYPE_HEADER_TITLE_MAP,
+  replaceAllAndSplit,
+  mergeAndReplaceAll,
+} from '@utils';
+import { BottomNoticeSlider, Button, Pill } from '@components'
 import styles from './styles';
 
 interface Props {
@@ -21,9 +29,9 @@ interface Props {
  */
 export const MissingWordExercise = ({
   exerciseData,
-  disableInteraction = false,
-  onPressSuccessCallback,
   onPressErrorCallback,
+  onPressSuccessCallback,
+  disableInteraction = false,
 }: Props): JSX.Element => {
   const {
     options,
@@ -35,207 +43,126 @@ export const MissingWordExercise = ({
   } = exerciseData;
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [learningStatement, setLearningStatement] = useState<any>(statement.replaceAll('_', '_________').split(' '));
-  const [resultBannerButtonType, setResultBannerButtonType] = useState<'SUBMIT' | 'SUCCESS' | 'ERROR'>('SUBMIT');
+  const [learningStatement, setLearningStatement] = useState<(string | ReactNode)[]>
+    (replaceAllAndSplit(statement, '_', '_________', ' '));
+  const [resultBannerButtonType, setResultBannerButtonType] = useState<EXERCISE_BUTTON_TYPE>
+    (EXERCISE_BUTTON_TYPE.SUBMIT);
 
   const statementWords = nativeStatement.split(' ');
 
   useEffect(() => {
-    const learningStatementString = learningStatement.map(l => l.trim()).join(' ').replaceAll('_________', '_');
+    const learningStatementString = mergeAndReplaceAll(learningStatement, '_________', '_', ' ');
     if (statement !== learningStatementString) {
-      setLearningStatement(statement.replaceAll('_', '_________').split(' '));
+      setLearningStatement(replaceAllAndSplit(statement, '_', '_________', ' '));
     }
   }, [statement]);
   
-  const resetStates = () =>  {
+  const resetStates = (): void =>  {
     setSelectedOptions([]);
     setLearningStatement(['']);
-    setResultBannerButtonType('SUBMIT');
+    setResultBannerButtonType(EXERCISE_BUTTON_TYPE.SUBMIT);
   };
 
-  const handleOptionPress = (option: string) => {
+  const handleOptionPress = (option: string): void => {
     const updatedOptions = [...selectedOptions, option];
     setSelectedOptions(prevState => [...prevState, option]);
     
-    updatedOptions.forEach(s => {
-      const index = learningStatement.findIndex(l => l === '_________');
-      const l = learningStatement;
-      l[index] = (
+    updatedOptions.forEach(opt => {
+      const index = learningStatement.findIndex(ls => ls === '_________');
+      const updatedStatement = learningStatement;
+      updatedStatement[index] = (
         <Pill
-          key={`updt_options_${s}`}
+          key={`updt_options_${opt}`}
           title={option}
           disabled={true}
           fakeButton
           buttonStyle={{
             ...Platform.select({
-              ios: {
-                shadowOpacity: 0,
-              },
-              android: {
-                elevation: 0,
-              }
+              ios: { shadowOpacity: 0 },
+              android: { elevation: 0 }
             }),
           }}
-        />
+        /> as ReactNode
       );
-      setLearningStatement(l);
+      setLearningStatement(updatedStatement);
     });
   };
 
-  const handleButtonPress = () => {
+  const handleButtonPress = (): void => {
     switch (resultBannerButtonType) {
-      case 'SUBMIT': {
+      case EXERCISE_BUTTON_TYPE.SUBMIT: {
         const areOptionsCorrect = checkIfArraysAreSame(selectedOptions, answers);
-        setResultBannerButtonType(areOptionsCorrect ? 'SUCCESS' : 'ERROR');
+        setResultBannerButtonType(areOptionsCorrect
+          ? EXERCISE_BUTTON_TYPE.SUCCESS : EXERCISE_BUTTON_TYPE.ERROR);
+      }
+      break;
+      case EXERCISE_BUTTON_TYPE.SUCCESS: {
+        resetStates();
+        onPressSuccessCallback();
+      }
+      break;
+      case EXERCISE_BUTTON_TYPE.ERROR: {
+        resetStates();
+        onPressErrorCallback();
       }
       break;
       default: break;
     }
   }
 
-  const renderResult = (): React.ReactElement => {
+  const renderButtonContainer = (): JSX.Element => {
     switch (resultBannerButtonType) {
-      case 'SUBMIT': return (
-        <View
-          style={{
-            width: '100%',
-            alignItems: 'center',
-            paddingBottom: PADDINGS.MEDIUM
-          }}
-        >
+      case EXERCISE_BUTTON_TYPE.SUBMIT: return (
+        <View style={styles.submitButtonWrapper}>
           <Button
             title="Check Answer"
-            disabled={selectedOptions.length !== answers.length}
             onPress={handleButtonPress}
+            disabled={selectedOptions.length !== answers.length}
           />
         </View>
       );
-      case 'SUCCESS': return (
-        <View
-          style={{
-            width: '100%',
-            alignItems: 'center',
-            backgroundColor: '#14E3E9',
-            paddingBottom: PADDINGS.X_LARGE * 2,
-            paddingTop: PADDINGS.LARGE,
-            justifyContent: 'center',
-            borderTopRightRadius: 28,
-            borderTopLeftRadius: 28,
-          }}
-        >
-          <Text
-            style={{
-              width: '90%',
-              alignSelf: 'center',
-              textAlign: 'left',
-              fontSize: 16,
-              color: THEME.WHITE,
-              fontWeight: 'bold',
-              marginBottom: PADDINGS.LARGE
-            }}
-          >
-            Great Job!
-          </Text>
-          <Button
-            title="Continue"
-            style={{
-              backgroundColor: THEME.WHITE,
-            }}
-            titleStyle={{
-              color: '#14E3E9'
-            }}
-            onPress={() => {
-              resetStates();
-              onPressSuccessCallback();
-            }}
-          />
-        </View>
+      case EXERCISE_BUTTON_TYPE.SUCCESS: return (
+        <BottomNoticeSlider
+          title="Great Job!"
+          bgColor={THEME.SUCCESS}
+          titleColor={THEME.SUCCESS}
+          buttonBGColor={THEME.WHITE}
+          onPress={handleButtonPress}
+        />
       );
-      case 'ERROR': return (
-        <View
-          style={{
-            width: '100%',
-            alignItems: 'center',
-            backgroundColor: '#FE7B89',
-            paddingBottom: PADDINGS.X_LARGE * 2,
-            paddingTop: PADDINGS.LARGE,
-            justifyContent: 'center',
-            borderTopRightRadius: 28,
-            borderTopLeftRadius: 28,
-          }}
-        >
-          <Text
-            style={{
-              width: '90%',
-              alignSelf: 'center',
-              textAlign: 'left',
-              fontSize: 16,
-              color: THEME.WHITE,
-              fontWeight: 'bold',
-              marginBottom: PADDINGS.LARGE
-            }}
-          >
-            Answer(s):
-            {' '}
-            <Text style={{ fontSize: 14 }}>
-              {answers.join(', ')}
-            </Text>
-          </Text>
-          <Button
-            title="Continue"
-            onPress={() => {
-              resetStates();
-              onPressErrorCallback();
-            }}
-            style={{
-              backgroundColor: THEME.WHITE,
-            }}
-            titleStyle={{
-              color: '#FE7B89'
-            }}
-          />
-        </View>
+      case EXERCISE_BUTTON_TYPE.ERROR: return (
+        <BottomNoticeSlider
+          bgColor={THEME.ERROR}
+          titleColor={THEME.ERROR}
+          buttonBGColor={THEME.WHITE}
+          onPress={handleButtonPress}
+          title={`Answer(s): ${answers.join(', ')}`}
+        />
       );
+      default: return null;
     }
   }
   
   return (
-    <View
-      style={styles.containerStyle}
-    >
-      <View style={{ maxHeight: '80%', alignItems: 'center' }}>
-        <Text
-          style={{
-            fontSize: 16,
-            color: THEME.WHITE,
-          }}
-        >
+    <View style={styles.containerStyle}>
+      <ScrollView contentContainerStyle={styles.scrollContainerStyle}>
+        <Text style={styles.exerciseTitleText}>
           {EXERCISE_TYPE_HEADER_TITLE_MAP[exerciseType]}
         </Text>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            paddingHorizontal: PADDINGS.SMALL,
-            marginTop: PADDINGS.X_LARGE,
-          }}
-        >
-          {statementWords.map((word, index) => {
+        <View style={styles.statementTextWrapper}>
+          {statementWords.map((word: string, index: number) => {
             const isHighlighted = targetWords.includes(index);
-
             return (
               <Text
                 key={`statement_${word}`}
-                style={{
-                  textDecorationLine: isHighlighted ? 'underline' : 'none',
-                  margin: 4,
-                  fontSize: 24,
-                  color: THEME.WHITE,
-                  fontWeight: isHighlighted ? 'bold': '400',
-                  textAlign: 'center'
-                }}
+                style={[
+                  styles.wordText,
+                  {
+                    fontWeight: isHighlighted ? 'bold': '400',
+                    textDecorationLine: isHighlighted ? 'underline' : 'none',
+                  }
+                ]}
               >
                 {word}
               </Text>
@@ -243,27 +170,13 @@ export const MissingWordExercise = ({
           })}
         </View>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingHorizontal: PADDINGS.SMALL,
-            marginTop: PADDINGS.X_LARGE,
-          }}
-        >
+        <View style={styles.learningStatementTextWrapper}>
           {learningStatement.map((word, index) => {
             if (typeof word !== 'string') return word;
             return (
               <Text
                 key={`statement_${index}`}
-                style={{
-                  margin: 4,
-                  fontSize: 24,
-                  color: THEME.WHITE,
-                  textAlign: 'center'
-                }}
+                style={styles.learningWordText}
               >
                 {word}
               </Text>
@@ -272,20 +185,12 @@ export const MissingWordExercise = ({
         </View>
 
         {/* Options */}
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'space-around',
-            paddingHorizontal: PADDINGS.SMALL,
-            marginTop: PADDINGS.X_LARGE * 2,
-          }}
-        >
+        <View style={styles.optionsWrapper}>
           {
             options.map(option => (
               <Pill
-                key={`options_${option}`}
                 title={option}
+                key={`options_${option}`}
                 onPress={handleOptionPress.bind(null, option)}
                 disabled={
                   selectedOptions.length === answers.length
@@ -295,27 +200,18 @@ export const MissingWordExercise = ({
                 hide={selectedOptions.includes(option)}
                 buttonStyle={{
                   ...Platform.select({
-                    ios: {
-                      shadowOpacity: 0.7,
-                    },
-                    android: {
-                      elevation: 8,
-                    }
+                    android: { elevation: 8 },
+                    ios: { shadowOpacity: 0.7 },
                   }),
                 }}
               />
             ))
           }
         </View>
-      </View>
+      </ScrollView>
 
-      <View
-        style={{
-          width: '100%',
-          alignItems: 'center',
-        }}
-      >
-        {renderResult()}
+      <View style={styles.buttonContainer}>
+        {renderButtonContainer()}
       </View>
     </View>
   );

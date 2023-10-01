@@ -11,6 +11,7 @@ interface Props extends ViewProps {
 /**
  * 
  * @param columnAlignment(optional) One of COLUMN_ALIGNMENT. Defaults to CENTER
+ * @param containerStyle(optional) ViewStyle for wrapper
  * @returns High level view for child components
  */
 export const MainContainer: FC<PropsWithChildren<Props>> = ({

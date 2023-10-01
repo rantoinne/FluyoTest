@@ -19,8 +19,8 @@ interface Props extends TouchableOpacityProps {
 export const Pill = ({
   title,
   hide = false,
-  fakeButton = false,
   buttonStyle = {},
+  fakeButton = false,
   ...touchableProps
 }: Props): JSX.Element => {
   return (
@@ -32,12 +32,8 @@ export const Pill = ({
             : touchableProps.disabled && !fakeButton
             ? THEME.CADET_BLUE : THEME.WHITE,
           ...Platform.select({
-            ios: {
-              shadowOpacity: hide ? 0 : 0.7,
-            },
-            android: {
-              elevation: hide ? 0 : 8,
-            }
+            android: { elevation: hide ? 0 : 8 },
+            ios: { shadowOpacity: hide ? 0 : 0.7 }  
           }),
         },
         buttonStyle]}
